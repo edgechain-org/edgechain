@@ -1,0 +1,17 @@
+rust_input: rust/src/api.rs
+dart_output: lib/src/frb_generated.dart
+
+rust_root: rust
+dart_root: .
+
+# Where the generated Rust glue code goes
+rust_output: rust/src/frb_generated.rs
+
+# C headers for the native build
+c_output: ios/Runner/bridge_generated.h
+
+# Dart class name prefix
+dart_class_name: EdgeChainBridge
+
+# Enable async support
+dart_enums_style: true

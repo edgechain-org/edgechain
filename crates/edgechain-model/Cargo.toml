@@ -1,0 +1,28 @@
+[package]
+name = "edgechain-model"
+description = "Model provider traits and implementations for EdgeChain"
+readme = "README.md"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+
+[features]
+gguf = ["dep:llama-cpp-2"]
+
+[dependencies]
+tokio = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+
+llama-cpp-2 = { version = "0.1", optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

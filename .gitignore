@@ -1,0 +1,33 @@
+# Rust
+/target/
+Cargo.lock
+
+# Flutter / Dart
+**/flutter/.dart_tool/
+**/flutter/build/
+**/flutter/.flutter-plugins
+**/flutter/.flutter-plugins-dependencies
+**/flutter/pubspec.lock
+
+# Models (large binary files — store separately)
+*.gguf
+*.bin
+*.onnx
+models/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
