@@ -21,9 +21,9 @@ tracing = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 
-edgechain-model = { path = "../edgechain-model" }
-edgechain-memory = { path = "../edgechain-memory" }
-edgechain-rag = { path = "../edgechain-rag" }
+edgechain-model = { path = "../edgechain-model", version = "0.1" }
+edgechain-memory = { path = "../edgechain-memory", version = "0.1" }
+edgechain-rag = { path = "../edgechain-rag", version = "0.1" }
 
 [dev-dependencies]
 tokio = { workspace = true }
