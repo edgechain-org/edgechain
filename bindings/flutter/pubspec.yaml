@@ -1,7 +1,17 @@
 name: edgechain_flutter
-description: Flutter binding for EdgeChain — local-first agent runtime for offline devices.
+description: Flutter binding for EdgeChain — local-first, offline LLM agent runtime for Android and iOS. Run GGUF models on-device with RAG, memory, and a command system.
 version: 0.1.0
 homepage: https://github.com/edgechain-org/edgechain
+repository: https://github.com/edgechain-org/edgechain
+issue_tracker: https://github.com/edgechain-org/edgechain/issues
+documentation: https://github.com/edgechain-org/edgechain/blob/main/bindings/flutter/README.md
+
+topics:
+  - llm
+  - ai
+  - agent
+  - on-device
+  - rag
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
