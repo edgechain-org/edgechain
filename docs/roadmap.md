@@ -14,73 +14,91 @@
 
 ---
 
-## v0.1 — Foundation
+## v0.1 — Foundation ✅ Released
 
 **Theme**: Get a working agent loop running on-device with Flutter.
 
-**Target**: First working demo — notes assistant on Android/iOS.
+**Status**: Complete. All 5 crates published to crates.io. Flutter package prepared for pub.dev.
 
 ### Core Runtime (Rust)
-- [ ] `edgechain-core` crate with agent loop trait
-- [ ] Deterministic step-by-step agent loop (build prompt → model call → parse action → execute → observe → repeat)
-- [ ] Command dispatcher with typed JSON schema input/output
-- [ ] Command registry (register, lookup, validate)
-- [ ] Step limit and timeout safety guards
+- [x] `edgechain-core` crate with agent loop trait
+- [x] Deterministic step-by-step agent loop (build prompt → model call → parse action → execute → observe → repeat)
+- [x] Command dispatcher with typed JSON schema input/output
+- [x] Command registry (`RwLock`-backed, register, lookup, validate)
+- [x] Step limit and timeout safety guards
 
 ### Model Provider
-- [ ] `edgechain-model` crate with `ModelProvider` trait
-- [ ] `llama.cpp` GGUF provider via `llama-cpp-rs` or direct FFI
-- [ ] Streaming token output support
-- [ ] Context window management (truncation strategy)
+- [x] `edgechain-model` crate with `ModelProvider` trait
+- [x] `GgufModelProvider` via `llama-cpp-2` (`--features gguf`)
+- [x] `MockModelProvider` for testing with scripted responses
+- [x] Context window overflow guard
+- [x] Configurable GPU layers, threads, context size
 
 ### Memory
-- [ ] `edgechain-memory` crate
-- [ ] Session memory (in-process, cleared on session end)
-- [ ] Long-term memory store backed by SQLite
-- [ ] Basic key-value and conversation history APIs
+- [x] `edgechain-memory` crate
+- [x] `SessionMemory` — in-process `RwLock<HashMap>`, cleared on drop
+- [x] `SqliteMemoryStore` — persistent SQLite via `rusqlite` (bundled)
+- [x] Key-value, tag-based search, prefix listing APIs
 
 ### Hooks & Observability
-- [ ] `HookRegistry` with lifecycle event bus
-- [ ] Hook points: `onBeforeModelCall`, `onAfterModelCall`, `onBeforeCommand`, `onAfterCommand`, `onMemoryWrite`, `onError`
-- [ ] Built-in audit log hook (append-only SQLite log)
+- [x] `HookRegistry` with lifecycle event bus
+- [x] Hook points: `BeforeModelCall`, `AfterModelCall`, `BeforeCommand`, `AfterCommand`, `MemoryWrite`, `Error`
+- [ ] Built-in audit log hook (append-only SQLite log) — deferred to v0.4
 
 ### Flutter Binding
-- [ ] `flutter_rust_bridge` integration
-- [ ] Dart API: `EdgeChain`, `Agent`, `Command`, `AgentResult`
-- [ ] Async streaming result support in Dart
+- [x] `flutter_rust_bridge` FFI scaffold (`api.rs`, `runtime.rs`)
+- [x] Dart API: `EdgeChainFlutter`, `Agent`, `AgentConfig`, `Command`, `MemoryStore`
+- [x] `frb_generated.dart` stub (replaced by codegen output after `flutter_rust_bridge_codegen generate`)
+- [x] Android + iOS plugin stubs, podspec, build.gradle
+- [ ] Async streaming result support in Dart — deferred to v0.2
+
+### Plugin System
+- [x] `edgechain-plugin` crate
+- [x] `EdgePlugin` trait + `PluginManifest` + `PluginManager`
+- [x] `EdgeRegistry` — commands, agents, hooks
+
+### CI & Distribution
+- [x] GitHub Actions CI (test, gguf feature check, Android cross-compile)
+- [x] `CONTRIBUTING.md`, `docs/architecture.md`, `docs/roadmap.md`
+- [x] All 5 crates published to crates.io (`edgechain-core`, `edgechain-model`, `edgechain-memory`, `edgechain-rag`, `edgechain-plugin`)
+- [x] `edgechain_flutter` pub.dev package prepared (pending `flutter pub publish`)
 
 ### Example App
-- [ ] `flutter_notes_assistant` — search and summarize local notes using a GGUF model
+- [x] `flutter_notes_assistant` — search and summarize local notes using a GGUF model
 
 ---
 
-## v0.2 — RAG (Retrieval-Augmented Generation)
+## v0.2 — RAG (Retrieval-Augmented Generation) ✅ Released
 
 **Theme**: Let agents answer questions grounded in local content with citations.
 
-**Target**: Agents that can search and cite local files, notes, and database rows.
+**Status**: Complete. RAG fully wired into the agent loop. Connectors shipped.
 
 ### Embeddings
-- [ ] `edgechain-rag` crate
-- [ ] Local embedding model support (GGUF embedding models or ONNX)
-- [ ] Batch indexing API
-- [ ] Incremental index updates (add/remove/update documents)
+- [x] `edgechain-rag` crate
+- [x] `Embedder` trait with `StubEmbedder` (testing) and `GgufEmbedder` (`--features gguf`)
+- [x] `GgufEmbedder` — GGUF embedding models via `llama-cpp-2`, L2-normalized, `spawn_blocking`
+- [ ] ONNX embedding support — deferred to v0.3
+- [ ] Persistent index (saved to disk, loaded on startup) — deferred to v0.3
 
 ### Vector Index
-- [ ] In-process vector store (HNSW or flat index for small corpora)
-- [ ] Persistent index (saved to disk, loaded on startup)
-- [ ] Similarity search with top-k and metadata filtering
+- [x] `VectorIndex` — flat cosine-similarity in-process index (suitable for ≤10k docs)
+- [x] Similarity search with top-k results
+- [ ] HNSW index for larger corpora — deferred to v0.3
+- [ ] Metadata filtering on search — deferred to v0.3
 
 ### Retriever
-- [ ] `Retriever` trait with pluggable backends
-- [ ] File connector (index text files from app sandbox)
-- [ ] SQLite connector (index rows from local database tables)
-- [ ] Citation metadata attached to retrieved chunks
+- [x] `Retriever` trait + `LocalRetriever` (embedder + vector index)
+- [x] `FileConnector` — index text/markdown files from a directory, with chunking and extension filter
+- [x] `SqliteConnector` — index rows from a local SQLite table, with metadata columns and WHERE filter
+- [x] `RetrievedChunk` with `id`, `text`, `score`, `metadata`
 
 ### Agent Integration
-- [ ] Automatic retrieval step in agent loop when relevant
-- [ ] `AgentResult.citations` — list of source references
-- [ ] Configurable retrieval strategy per agent (always, on-demand, disabled)
+- [x] `ParsedAction::Retrieve` wired in agent loop — calls `LocalRetriever::search`
+- [x] `AgentResult.citations` — populated from retrieved chunks (source ID + 200-char excerpt)
+- [x] `Agent::with_retriever()` — attach a retriever to any agent
+- [x] Bridge: `edge_rag_index` and `edge_rag_search` wired in `api.rs`
+- [ ] Configurable retrieval strategy per agent (always, on-demand, disabled) — deferred to v0.3
 
 ### Example App
 - [ ] `flutter_inventory_assistant` — query and summarize inventory records with citations
@@ -228,28 +246,33 @@ Ideas being tracked but not yet scheduled:
 *Do this before any public announcement.*
 
 #### GitHub (Non-negotiable)
-- [ ] Create `github.com/edgechain-org/edgechain` (public repo)
-- [ ] Clean `README.md` with quick start, architecture overview, and badges
-- [ ] `docs/architecture.md` — Rust traits, agent loop diagram, data flow
-- [ ] `docs/roadmap.md` (this file)
-- [ ] `CONTRIBUTING.md` — how to add model providers, connectors, plugins
-- [ ] Working Flutter example app in `examples/`
-- [ ] GitHub Actions CI (build + test on push)
-- [ ] GitHub Releases with changelogs per version
+- [ ] Create `github.com/edgechain-org/edgechain` (public repo) — repo initialized locally, push pending
+- [x] Clean `README.md` with quick start, architecture overview, and badges
+- [x] `docs/architecture.md` — Rust traits, agent loop diagram, data flow
+- [x] `docs/roadmap.md` (this file)
+- [x] `CONTRIBUTING.md` — how to add model providers, connectors, plugins
+- [x] Working Flutter example app in `examples/flutter_notes_assistant/`
+- [x] GitHub Actions CI (build + test on push, gguf feature check, Android cross-compile)
+- [ ] GitHub Releases with changelogs per version — pending first push
 
 #### crates.io (Rust Registry)
-- [ ] Publish `edgechain-core`
-- [ ] Publish `edgechain-model`
-- [ ] Publish `edgechain-rag`
-- [ ] Publish `edgechain-memory`
-- [ ] Publish `edgechain-plugin`
-- [ ] Each crate: proper `Cargo.toml` metadata (description, license, keywords, categories)
-- [ ] Docs auto-published to `docs.rs`
+- [x] Publish `edgechain-core` v0.1.0
+- [x] Publish `edgechain-model` v0.1.0
+- [x] Publish `edgechain-rag` v0.1.0
+- [x] Publish `edgechain-memory` v0.1.0
+- [x] Publish `edgechain-plugin` v0.1.0
+- [x] Each crate: proper `Cargo.toml` metadata (description, readme, license, repository, homepage, keywords)
+- [x] Per-crate `README.md` displayed on crates.io
+- [ ] Docs auto-published to `docs.rs` — happens automatically after push
 
 #### pub.dev (Flutter/Dart Registry)
-- [ ] Publish `edgechain_flutter` package
-- [ ] Dart API docs complete and passing `dart doc`
-- [ ] Example tab on pub.dev with minimal working snippet
+- [x] `edgechain_flutter` package fully prepared (README, CHANGELOG, LICENSE, pubspec metadata, topics)
+- [x] Android plugin stub (Kotlin + build.gradle)
+- [x] iOS plugin stub (Swift + podspec)
+- [x] Example app with `pubspec.yaml` for pub.dev example tab
+- [ ] Run `flutter_rust_bridge_codegen generate` to replace stub `frb_generated.dart`
+- [ ] Run `flutter pub publish` — requires Flutter SDK
+- [ ] Dart API docs passing `dart doc`
 - [ ] Achieve pub.dev "likes" baseline via early adopter outreach
 
 ---
@@ -306,4 +329,4 @@ Ideas being tracked but not yet scheduled:
 
 ---
 
-*Last updated: February 2026*
+*Last updated: 22 February 2026 — v0.1 + v0.2 complete, 5 crates live on crates.io*
