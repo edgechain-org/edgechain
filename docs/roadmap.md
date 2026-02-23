@@ -105,34 +105,34 @@
 
 ---
 
-## v0.3 — Plugins & Skills
+## v0.3 — Plugins & Skills ✅ Completed
 
 **Theme**: Make EdgeChain extensible so teams can package and share domain-specific agents.
 
 **Target**: A plugin can be dropped into any EdgeChain app and contribute commands, skills, and agents.
 
 ### Plugin System
-- [ ] `edgechain-plugin` crate
-- [ ] `EdgePlugin` trait: `id`, `version`, `register(EdgeRegistry)`
-- [ ] `EdgeRegistry` API: register commands, skills, agents, hooks
-- [ ] Plugin manifest (metadata: name, version, required permissions)
-- [ ] Plugin load/unload lifecycle
+- [x] `edgechain-plugin` crate
+- [x] `EdgePlugin` trait: `id`, `version`, `register(EdgeRegistry)`
+- [x] `EdgeRegistry` API: register commands, skills, agents, hooks
+- [x] Plugin manifest (metadata: name, version, required permissions)
+- [x] Plugin load/unload lifecycle
 
 ### Skills
-- [ ] `Skill` trait: `name`, `allowedCommands`, `systemPrompt()`
-- [ ] Skill-level command allowlist enforcement
-- [ ] Skill-level prompt injection into agent context
-- [ ] Skill policies: confirmation required, read-only mode, external-gated
+- [x] `Skill` trait: `name`, `allowedCommands`, `systemPrompt()`
+- [x] Skill-level command allowlist enforcement
+- [x] Skill-level prompt injection into agent context
+- [x] Skill policies: confirmation required, read-only mode, external-gated
 
 ### Agent Registry
-- [ ] Named agent registry (`edge.agent("inventory_assistant")`)
-- [ ] Agent-to-skill binding
-- [ ] Multi-agent routing (route user input to the right agent by intent)
+- [x] Named agent registry (`edge.agent("inventory_assistant")`)
+- [x] Agent-to-skill binding
+- [x] Multi-agent routing (route user input to the right agent by intent)
 
 ### Example Plugins
-- [ ] `CrmPlugin` — contacts, meeting notes, follow-up tasks
-- [ ] `InventoryPlugin` — stock lookup, purchase orders, low-stock alerts
-- [ ] `FieldServicePlugin` — job reports, site checklists, offline form submission
+- [x] `CrmPlugin` — contacts, meeting notes, follow-up tasks
+- [x] `InventoryPlugin` — stock lookup, purchase orders, low-stock alerts
+- [x] `FieldServicePlugin` — job reports, site checklists, offline form submission
 
 ---
 

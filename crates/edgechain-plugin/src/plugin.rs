@@ -1,5 +1,7 @@
 use edgechain_core::{Command, AgentConfig, Hook};
 use crate::manifest::PluginManifest;
+use std::sync::Arc;
+use edgechain_core::Skill;
 
 /// The registry passed to a plugin during registration.
 /// Collects everything the plugin contributes.
@@ -8,6 +10,7 @@ pub struct EdgeRegistry {
     pub commands: Vec<Command>,
     pub agents: Vec<AgentConfig>,
     pub hooks: Vec<Box<dyn Hook>>,
+    pub skills: Vec<Arc<dyn Skill>>,
 }
 
 impl EdgeRegistry {
@@ -25,6 +28,10 @@ impl EdgeRegistry {
 
     pub fn hook(&mut self, hook: impl Hook + 'static) {
         self.hooks.push(Box::new(hook));
+    }
+
+    pub fn skill(&mut self, skill: Arc<dyn Skill>) {
+        self.skills.push(skill);
     }
 }
 

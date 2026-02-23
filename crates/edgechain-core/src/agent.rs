@@ -9,6 +9,7 @@ use crate::{
     context::{AgentContext, ParsedAction, parse_model_output},
     error::CoreError,
     hook::{HookEvent, HookRegistry, ModelCallContext, ModelOutputContext, ErrorContext},
+    skill::SkillSet,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,6 +78,7 @@ pub struct Agent {
     hooks: Arc<HookRegistry>,
     memory: Arc<dyn MemoryStore>,
     retriever: Option<Arc<dyn Retriever>>,
+    skills: SkillSet,
 }
 
 impl Agent {
@@ -87,7 +89,7 @@ impl Agent {
         hooks: Arc<HookRegistry>,
         memory: Arc<dyn MemoryStore>,
     ) -> Self {
-        Self { config, model, commands, hooks, memory, retriever: None }
+        Self { config, model, commands, hooks, memory, retriever: None, skills: SkillSet::new() }
     }
 
     pub fn with_retriever(mut self, retriever: Arc<dyn Retriever>) -> Self {
@@ -95,14 +97,25 @@ impl Agent {
         self
     }
 
+    pub fn with_skill(mut self, skill: Arc<dyn crate::skill::Skill>) -> Self {
+        self.skills.add(skill);
+        self
+    }
+
     pub async fn run(&self, user_input: &str) -> Result<AgentResult, CoreError> {
         let session_id = uuid::Uuid::new_v4().to_string();
         info!(agent = %self.config.id, session = %session_id, input = %user_input, "Agent run started");
 
+        let system_prompt = if self.skills.is_empty() {
+            self.config.system_prompt.clone()
+        } else {
+            format!("{}{}", self.config.system_prompt, self.skills.build_system_prompt())
+        };
+
         let mut ctx = AgentContext::new(
             &self.config.id,
             &session_id,
-            &self.config.system_prompt,
+            &system_prompt,
             Arc::clone(&self.memory),
         );
         ctx.push_user(user_input);
@@ -157,12 +170,13 @@ impl Agent {
                 }
 
                 ParsedAction::CallCommand { name, args } => {
-                    if let Some(allowed) = &self.config.allowed_commands {
-                        if !allowed.contains(&name) {
-                            warn!(agent = %self.config.id, command = %name, "Command not in allowlist");
-                            ctx.push_tool_result(format!("Error: command '{name}' is not allowed for this agent."));
-                            continue;
-                        }
+                    let mut allowed = self.config.allowed_commands.clone().unwrap_or_default();
+                    allowed.extend(self.skills.allowed_commands());
+
+                    if !allowed.is_empty() && !allowed.contains(&name) {
+                        warn!(agent = %self.config.id, command = %name, "Command not in allowlist");
+                        ctx.push_tool_result(format!("Error: command '{name}' is not allowed for this agent."));
+                        continue;
                     }
 
                     self.hooks.emit(HookEvent::BeforeCommand { name: name.clone(), args: args.clone() }).await;
