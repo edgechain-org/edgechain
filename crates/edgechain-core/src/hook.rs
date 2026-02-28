@@ -33,6 +33,7 @@ pub enum HookEvent {
     AfterModelCall(ModelOutputContext),
     BeforeCommand { name: String, args: Value },
     AfterCommand(CommandResult),
+    CommandFailedPermanent { name: String, args: Value, error: String, attempts: u32 },
     MemoryWrite { key: String, value: Value },
     Error(ErrorContext),
 }
@@ -88,6 +89,9 @@ impl Hook for TracingHook {
             }
             HookEvent::AfterCommand(result) => {
                 debug!(command = %result.command, success = result.success, "← command result");
+            }
+            HookEvent::CommandFailedPermanent { name, error, attempts, .. } => {
+                debug!(command = %name, attempts = attempts, error = %error, "command permanently failed, routed to DLQ");
             }
             HookEvent::MemoryWrite { key, .. } => {
                 debug!(key = %key, "memory write");

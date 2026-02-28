@@ -20,6 +20,19 @@ impl SqliteMemoryStore {
         Ok(store)
     }
 
+    /// Open a persistent SQLite connection and immediately set the SQLCipher encryption key.
+    pub fn open_encrypted(path: &str, key: &str) -> Result<Self, MemoryError> {
+        let conn = Connection::open(path)?;
+        // Execute PRAGMA key to set or verify the encryption key.
+        // If the database is new, it will be encrypted with this key.
+        // If it already exists, this key is required to read/write it.
+        conn.execute(&format!("PRAGMA key = '{}';", key), [])?;
+        
+        let store = Self { conn: Mutex::new(conn) };
+        store.init_schema()?;
+        Ok(store)
+    }
+
     pub fn in_memory() -> Result<Self, MemoryError> {
         let conn = Connection::open_in_memory()?;
         let store = Self { conn: Mutex::new(conn) };

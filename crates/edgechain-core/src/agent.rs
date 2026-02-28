@@ -136,9 +136,21 @@ impl Agent {
                 prompt_tokens,
             })).await;
 
-            let response = self.model.complete(request).await.map_err(|e| {
-                CoreError::Model(e)
-            })?;
+            let response = match self.model.complete(request).await {
+                Ok(res) => res,
+                Err(e) => {
+                    warn!(agent = %self.config.id, error = %e, "Model call failed during agent loop");
+                    ctx.push_tool_result(format!("Error calling model: {e}. Please retry or take an alternative action."));
+                    
+                    steps.push(AgentStep {
+                        step: step_num,
+                        action: StepAction::ModelCall { prompt_tokens },
+                        observation: format!("Model error: {e}"),
+                    });
+                    
+                    continue;
+                }
+            };
 
             total_tokens += response.tokens_used;
 
@@ -181,9 +193,25 @@ impl Agent {
 
                     self.hooks.emit(HookEvent::BeforeCommand { name: name.clone(), args: args.clone() }).await;
                     let result = self.commands.execute(&name, args.clone()).await?;
+                    
+                    if !result.success {
+                        // Exhausted retries (if any were configured) and still failed
+                        self.hooks.emit(HookEvent::CommandFailedPermanent {
+                            name: name.clone(),
+                            args: args.clone(),
+                            error: result.error.clone().unwrap_or_else(|| "Unknown error".to_string()),
+                            attempts: 1, // `commands.execute` handles internal retries, so from the agent's view it's 1 meta-attempt
+                        }).await;
+                    }
+                    
                     self.hooks.emit(HookEvent::AfterCommand(result.clone())).await;
 
-                    let observation = serde_json::to_string_pretty(&result.output)?;
+                    let observation = if result.success {
+                        serde_json::to_string_pretty(&result.output)?
+                    } else {
+                        format!("Command permanently failed: {}", result.error.unwrap_or_default())
+                    };
+                    
                     ctx.push_tool_result(format!("Command '{name}' result:\n{observation}"));
 
                     steps.push(AgentStep {

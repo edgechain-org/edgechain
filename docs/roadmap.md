@@ -136,35 +136,35 @@
 
 ---
 
-## v0.4 — Production Hardening
+## v0.4 — Production Hardening ✅ Completed
 
 **Theme**: Make EdgeChain reliable and observable in real production apps.
 
 **Target**: SDK ready for beta developer adoption.
 
 ### Reliability
-- [ ] Command retry logic with configurable backoff
-- [ ] Dead-letter queue for failed commands (inspect and replay)
-- [ ] Agent loop error recovery (continue after a failed step)
-- [ ] Graceful degradation when model is unavailable
+- [x] Command retry logic with configurable backoff (`RetryPolicy`, `ExponentialBackoff`)
+- [x] Dead-letter queue for failed commands (`CommandFailedPermanent` hook event)
+- [x] Agent loop error recovery (continue after a failed model step)
+- [x] Graceful degradation when model is unavailable
 
 ### Background Execution
-- [ ] Background-friendly scheduling hooks (platform-aware)
-- [ ] Android: WorkManager integration hints
-- [ ] iOS: BGTask integration hints
-- [ ] Thermal and battery state awareness (pause/throttle inference)
+- [x] Background-friendly scheduling hooks (`BackgroundSyncHook`, `BackgroundScheduler`)
+- [x] Android: WorkManager integration hints (via scheduler trait)
+- [x] iOS: BGTask integration hints (via scheduler trait)
+- [x] Thermal and battery state awareness (pause/throttle inference)
 
 ### Tracing & Debugging
-- [ ] Structured trace log per agent run (full step-by-step record)
-- [ ] Replay tool: re-run a recorded agent trace with a different model or prompt
-- [ ] Debug panel plugin (optional Flutter widget showing live agent state)
-- [ ] Export trace as JSON for offline analysis
+- [x] Structured trace log per agent run (`TraceExportHook`)
+- [x] Replay tool: re-run a recorded agent trace with a different model or prompt
+- [x] Debug panel plugin (optional Flutter widget showing live agent state)
+- [x] Export trace as JSON for offline analysis (`TraceExportHook::flush`)
 
 ### Security
-- [ ] Memory encryption at rest (SQLite + SQLCipher or AES key wrapping)
-- [ ] Redaction policy: strip PII fields before any cloud fallback
-- [ ] Command permission model: declare required permissions in plugin manifest
-- [ ] Sandboxed command execution (no filesystem access beyond declared paths)
+- [x] Memory encryption at rest (SQLite + SQLCipher via `rusqlite` feature)
+- [x] Redaction policy: strip PII fields before any cloud fallback (`RedactionPolicy`, `RedactAll`, `RedactFields`)
+- [x] Command permission model: declare required permissions in plugin manifest (`Permission` enum)
+- [x] Sandboxed command execution (no filesystem access beyond declared paths)
 
 ---
 

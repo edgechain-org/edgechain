@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tracing::{debug, warn};
-use crate::error::CoreError;
+use crate::{error::CoreError, retry::{RetryPolicy, NoRetry}};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -53,6 +53,7 @@ pub trait CommandHandler: Send + Sync {
 pub struct Command {
     pub meta: CommandMeta,
     handler: Arc<dyn CommandHandler>,
+    retry_policy: Arc<dyn RetryPolicy>,
 }
 
 impl Command {
@@ -71,7 +72,13 @@ impl Command {
                 input_schema,
             },
             handler: Arc::new(handler),
+            retry_policy: Arc::new(NoRetry),
         }
+    }
+
+    pub fn with_retry_policy(mut self, policy: impl RetryPolicy + 'static) -> Self {
+        self.retry_policy = Arc::new(policy);
+        self
     }
 
     pub async fn run(&self, args: Value) -> CommandResult {
@@ -118,19 +125,28 @@ impl CommandRegistry {
     }
 
     pub async fn execute(&self, name: &str, args: Value) -> Result<CommandResult, CoreError> {
-        let handler: Arc<dyn CommandHandler> = {
+        let (handler, retry_policy) = {
             let guard = self.commands.read().unwrap();
-            guard.get(name)
-                .map(|c| Arc::clone(&c.handler))
-                .ok_or_else(|| CoreError::CommandNotFound(name.to_string()))?
+            let cmd = guard.get(name).ok_or_else(|| CoreError::CommandNotFound(name.to_string()))?;
+            (Arc::clone(&cmd.handler), Arc::clone(&cmd.retry_policy))
         };
         let cmd_name = name.to_string();
         debug!(command = %cmd_name, "Executing command");
-        match handler.execute(args).await {
-            Ok(output) => Ok(CommandResult::ok(cmd_name, output)),
-            Err(e) => {
-                warn!(command = %cmd_name, error = %e, "Command failed");
-                Ok(CommandResult::err(cmd_name, e.to_string()))
+        
+        let mut attempt = 0;
+        loop {
+            match handler.execute(args.clone()).await {
+                Ok(output) => return Ok(CommandResult::ok(cmd_name, output)),
+                Err(e) => {
+                    if let Some(delay) = retry_policy.should_retry(attempt, &e) {
+                        warn!(command = %cmd_name, attempt = attempt + 1, error = %e, "Command failed, retrying after delay");
+                        tokio::time::sleep(delay).await;
+                        attempt += 1;
+                    } else {
+                        warn!(command = %cmd_name, attempts = attempt + 1, error = %e, "Command failed permanently");
+                        return Ok(CommandResult::err(cmd_name, e.to_string()));
+                    }
+                }
             }
         }
     }
